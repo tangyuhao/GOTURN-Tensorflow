@@ -85,7 +85,7 @@ if __name__ == "__main__":
     batch_queue = next_batch(input_queue)
     tracknet = caffenet.TRACKNET(BATCH_SIZE)
     tracknet.build()
-    train_step = tf.train.AdamOptimizer(1e-6,0.9).minimize(tracknet.loss)
+    train_step = tf.train.AdamOptimizer(1e-6,0.9).minimize(tracknet.loss_wdecay)
 
     tf.summary.scalar('L1_loss', tracknet.loss)
     merged_summary = tf.summary.merge_all()

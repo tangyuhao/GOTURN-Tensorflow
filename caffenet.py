@@ -8,6 +8,7 @@ class TRACKNET:
         self.image = tf.placeholder(tf.float32, [batch_size, 227, 227, 3])
         self.bbox = tf.placeholder(tf.float32, [batch_size, 4])
         self.train = train
+        self.wd = 0.0005
     def build(self):
         ########### for target ###########
         # [filter_height, filter_width, in_channels, out_channels]
@@ -117,7 +118,8 @@ class TRACKNET:
 
         self.print_shapes()
         self.loss = self._loss_layer(self.fc4, self.bbox ,name = "loss")
-
+        l2_loss = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES), name='l2_weight_loss')
+        self.loss_wdecay = self.loss + l2_loss
 
     def _loss_layer(self, bottom, label, name = None):
         diff = tf.subtract(self.fc4, self.bbox)
@@ -136,6 +138,14 @@ class TRACKNET:
             biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float32), name='biases')
             out = tf.nn.bias_add(conv, biases)
             self.parameters[name] = [kernel, biases]
+
+            if not tf.get_variable_scope().reuse:
+                weight_decay = tf.multiply(tf.nn.l2_loss(kernel), self.wd,
+                                       name='kernel_loss')
+                tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
+                                 weight_decay)
+
+
             out2 = tf.nn.relu(out, name=scope)
             _activation_summary(out2)
             out2 = tf.Print(out2, [tf.shape(out2)], message='Shape of %s' % name, first_n = 1, summarize=4)
@@ -150,6 +160,16 @@ class TRACKNET:
             bottom_flat = tf.reshape(bottom, [-1, shape])
             fc_weights = tf.nn.bias_add(tf.matmul(bottom_flat, weights), bias)
             self.parameters[name] = [weights, bias]
+
+
+            if not tf.get_variable_scope().reuse:
+                weight_decay = tf.multiply(tf.nn.l2_loss(weights), self.wd,
+                                       name='fc_relu_weight_loss')
+                tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
+                                 weight_decay)
+
+
+
             top = tf.nn.relu(fc_weights, name=scope)
             _activation_summary(top)
             top = tf.Print(top, [tf.shape(top)], message='Shape of %s' % name, first_n = 1, summarize=4)
@@ -164,10 +184,25 @@ class TRACKNET:
             bottom_flat = tf.reshape(bottom, [-1, shape])
             top = tf.nn.bias_add(tf.matmul(bottom_flat, weights), bias, name=scope)
             self.parameters[name] = [weights, bias]
+
+            if not tf.get_variable_scope().reuse:
+                weight_decay = tf.multiply(tf.nn.l2_loss(weights), self.wd,
+                                       name='fc_weight_loss')
+                tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
+                                 weight_decay)
+
             _activation_summary(top)
             top = tf.Print(top, [tf.shape(top)], message='Shape of %s' % name, first_n = 1, summarize=4)
             return top
-
+    def _add_wd_and_summary(self, var, wd, collection_name=None):
+        if collection_name is None:
+            collection_name = tf.GraphKeys.REGULARIZATION_LOSSES
+        if wd and (not tf.get_variable_scope().reuse):
+            weight_decay = tf.multiply(
+                tf.nn.l2_loss(var), wd, name='weight_loss')
+            tf.add_to_collection(collection_name, weight_decay)
+        _variable_summaries(var)
+        return var
     def print_shapes(self):
         print("%s:"%(self.image_conv1),self.image_conv1.get_shape().as_list())
         print("%s:"%(self.image_pool1),self.image_pool1.get_shape().as_list())
