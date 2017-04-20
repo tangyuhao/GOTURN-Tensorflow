@@ -1,0 +1,10 @@
+.tags
+checkpoints/
+
+train/
+2DMOT2015/
+MOT17Det/
+__pycache__
+*.pyc
+.DS_Store
+train_summary/
