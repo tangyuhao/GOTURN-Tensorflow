@@ -222,7 +222,7 @@ class TRACKNET:
     
     def test(self):
         sess = tf.Session()
-        a = np.full((self.batch_size,227,227,3), 1)
+        a = np.full((self.batch_size,227,227,3), 1) # numpy.full(shape, fill_value, dtype=None, order='C')
         b = np.full((self.batch_size,227,227,3), 2)
         sess.run(tf.global_variables_initializer())
 
