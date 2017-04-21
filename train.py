@@ -61,7 +61,7 @@ def data_reader(input_queue):
 
 def next_batch(input_queue):
     min_queue_examples = 128
-    num_threads = 4
+    num_threads = 8
     [search_tensor, target_tensor, box_tensor] = data_reader(input_queue)
     [search_batch, target_batch, box_batch] = tf.train.shuffle_batch(
         [search_tensor, target_tensor, box_tensor],
@@ -93,6 +93,7 @@ if __name__ == "__main__":
 
     train_step = tf.train.AdamOptimizer(learning_rate,0.9).minimize(\
                     tracknet.loss_wdecay, global_step=global_step)
+
 
     tf.summary.scalar('L1_loss', tracknet.loss)
     merged_summary = tf.summary.merge_all()
@@ -130,10 +131,9 @@ if __name__ == "__main__":
     try:
         for i in range(start, int(len(train_box)/BATCH_SIZE*NUM_EPOCHS)):
             if i % int(len(train_box)/BATCH_SIZE) == 0:
-                logging.info("start epoch[%d]"%(int(i/len(train_box))))
+                logging.info("start epoch[%d]"%(int(i/len(train_box)*BATCH_SIZE)))
                 if i > start:
                     save_ckpt = "checkpoint.ckpt"
-                    
                     last_save_itr = i
                     model_saver.save(sess, "checkpoints/" + save_ckpt, global_step=i+1)
             print(global_step.eval(session=sess))        
