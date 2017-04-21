@@ -77,7 +77,7 @@ if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
         level=logging.DEBUG,filename="train.log")
 
-    [train_target, train_search, train_box] = load_training_set("train.txt")
+    [train_target, train_search, train_box] = load_training_set("train_new.txt")
     target_tensors = tf.convert_to_tensor(train_target, dtype=tf.string)
     search_tensors = tf.convert_to_tensor(train_search, dtype=tf.string)
     box_tensors = tf.convert_to_tensor(train_box, dtype=tf.float64)
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         for i in range(start, int(len(train_box)/BATCH_SIZE*NUM_EPOCHS)):
             if i % int(len(train_box)/BATCH_SIZE) == 0:
                 logging.info("start epoch[%d]"%(int(i/len(train_box))))
-                if i == start:
+                if i > start:
                     save_ckpt = "checkpoint.ckpt"
                     model_saver = tf.train.Saver(max_to_keep = 3)
                     last_save_itr = i
@@ -136,13 +136,13 @@ if __name__ == "__main__":
                     tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
             logging.debug('Train: time elapsed: %.3fs.'%(time.time()-start_time))
 
-            if i % 2 == 0 and i > start:
+            if i % 10 == 0 and i > start:
                 summary = sess.run(merged_summary, feed_dict={tracknet.image:cur_batch[0],
                     tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
                 train_writer.add_summary(summary, i)
     except KeyboardInterrupt:
         print("get keyboard interrupt")
-        if (i - start > 100):
+        if (i - start > 1000):
             model_saver = tf.train.Saver()
             save_ckpt = "checkpoint.ckpt"
             model_saver.save(sess, "checkpoints/" + save_ckpt, global_step=i+1)

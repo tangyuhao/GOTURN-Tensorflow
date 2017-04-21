@@ -10,73 +10,50 @@ import pickle
 import cv2
 import numpy as np
 # laplace function
-laplace = lambda a,b: np.random.laplace(a, b, 1)[0]
-
-
-data_set = ['MOT17Det/train', '2DMOT2015/train']
-clips = []
-for data_folder in data_set:
-    clips += [os.path.join(data_folder,clip) for clip in os.listdir(data_folder) if not clip.endswith('.DS_Store')]
-# now each clip is the folder of clip, it has three folders:
-# det, gt, imgs
-# the bounding box are 1-based, the left most one is idx 1
-# gt.txt file: <frame> <target> <x1> <y1> <width> <height> <...>
-
 X1 = 0
 Y1 = 1
 WIDTH = 2
 HEIGHT = 3
 
-train_info = {}
-for idx,clip_path in enumerate(clips):
-    # print(clip_path)
-    print(idx)
-    gt_txt = os.path.join(clip_path,"gt/gt.txt")
-    gt_file = open(gt_txt, 'r')
-    content = gt_file.read().splitlines()
-    content_split = []
-    for line in content:
-        split_list = line.split(',')
-        if (clip_path.startswith('MOT17Det') and split_list[7] != '1' or 
-            clip_path.startswith('2DMOT2015') and split_list[6] != '1'):
-            continue
-        tmp_list = split_list[:6]
-        tmp_list = [tmp_list[0].zfill(6)+'.jpg', int(tmp_list[1]), float(tmp_list[2]),
-                     float(tmp_list[3]), float(tmp_list[4]), float(tmp_list[5])]
-        tmp_list[0], tmp_list[1] = tmp_list[1], tmp_list[0]
-        content_split += [tmp_list]
-    content_split_sort = sorted(content_split)
-    train_info[os.path.join(clip_path,'img1')] = content_split_sort
+laplace = lambda a,b: np.random.laplace(a, b, 1)[0]
 
-# choose 1 frame from every 5 frames
-train_info_small = {}
-for clip_path, boxes in train_info.items():
-    train_info_small[clip_path] = [box for idx,box in enumerate(boxes) if idx % 3 == 1]
+data_set = 'imagedata++'
+gt_set = 'alov300++_rectangleAnnotation_full'
+
+data_folders = sorted([os.path.join(data_set,clip) for clip in os.listdir(data_set) if not clip.endswith('.DS_Store')])
+gt_folders = sorted([os.path.join(gt_set,clip) for clip in os.listdir(gt_set) if not clip.endswith('.DS_Store')])
+clips = []
+for data_folder in data_folders:
+    clips += sorted([os.path.join(data_folder,clip) for clip in os.listdir(data_folder) if not clip.endswith('.DS_Store')])
+
+gts = []
+for gt_folder in gt_folders:
+    gts += sorted([os.path.join(gt_folder,clip) for clip in os.listdir(gt_folder) if not clip.endswith('.DS_Store')])
 
 box_track = []
-for clip_path, boxes in train_info_small.items():
+num_clips = len(clips)
+for i in range(num_clips):
+    gt_file = open(gts[i])
+    content = gt_file.read().splitlines()
+    gt_file.close()
+    prev_file = None
     prev_box = None
-    for curr_box in boxes:
-        if not prev_box:
-            prev_box = curr_box
-            continue
-        # now it is not the first image
-        print(curr_box[0],prev_box[0])
-        if curr_box[0] == prev_box[0] and int(curr_box[1][:6]) - 3 == int(prev_box[1][:6]):
-            # if it is the same video and it is two consecutive frames
-            new_line_list = [os.path.join(clip_path,prev_box[1]),os.path.join(clip_path,curr_box[1])] \
-                            + prev_box[2:] + curr_box[2:]
-            box_track += [new_line_list]
+    for line in content:
+        split_list = line.split()
+        curr_file = os.path.join(clips[i],split_list[0].zfill(8)+'.jpg')
+        [x1,y1,x2,y2] = [float(split_list[3]),float(split_list[2]),
+                        float(split_list[1]),float(split_list[6])]
+        x1 = min(float(split_list[1]),float(split_list[3]),float(split_list[5]),float(split_list[7]))
+        x2 = max(float(split_list[1]),float(split_list[3]),float(split_list[5]),float(split_list[7]))
+        y1 = min(float(split_list[2]),float(split_list[4]),float(split_list[6]),float(split_list[8]))
+        y2 = max(float(split_list[2]),float(split_list[4]),float(split_list[6]),float(split_list[8]))
+        curr_box = [x1,y1,x2-x1,y2-y1]
+        if prev_box != None:
+            box_track += [[prev_file,curr_file,
+            prev_box[0],prev_box[1],prev_box[2],prev_box[3],
+            curr_box[0],curr_box[1],curr_box[2],curr_box[3]]]
         prev_box = curr_box
-
-# pickle.dump(box_track, open("trainset.p", "wb"))
-
-# f = open('test.txt', 'w+')
-# for item in box_track:
-#     f.write(str(item) + '\n')
-
-# use this to restore
-# box_track_load = pickle.load(open("trainset.p", "rb"))
+        prev_file = curr_file
 
 center_b = 0.2
 length_b = 1/15
@@ -117,6 +94,9 @@ for idx,box in enumerate(box_track):
     search_box = [search_center[X1] - search_width/2, search_center[Y1] - search_height/2,\
                     search_center[X1] + search_width/2, search_center[Y1] + search_height/2]
     orig_box = prev_box[:2] + [prev_box[0]+prev_box[2],prev_box[1]+prev_box[3]] # [x1,y1,x2,y2]
+    
+
+
     # print("original:%s"%(orig_box),"new_search:%s"%(search_box[:4]))
 
     # deal with bounding exceeding problem:
@@ -125,9 +105,14 @@ for idx,box in enumerate(box_track):
     img_height, img_width, _ = prev_frame.shape
     new_search_box = [max(x1-1,0),max(y1-1,0),min(x2-1,img_width-1),min(y2-1,img_height-1)]
 
-    # target_box : [x1,y1,x2,y2], it is the bounding box of prev_frame
-    [x1, y1, x2, y2] = [int(round(prev_box[X1]-1)),int(round(prev_box[Y1]-1)),\
-                        int(round(prev_box[X1]+prev_box[WIDTH]-1)),int(round(prev_box[Y1]+prev_box[HEIGHT]-1))]
+    # target_box : [x1,y1,x2,y2], double size of the bounding box of prev_frame
+    target_width = prev_box[2]
+    target_height = prev_box[3]
+    [x1, y1, x2, y2] = [int(round(orig_box[0] - target_width/2)), int(round(orig_box[1] - target_height/2)),
+                int(round(orig_box[2] + target_width/2)), int(round(orig_box[3] + target_height/2))]
+
+    # [x1, y1, x2, y2] = [int(round(prev_box[X1]-1)),int(round(prev_box[Y1]-1)),\
+    #                     int(round(prev_box[X1]+prev_box[WIDTH]-1)),int(round(prev_box[Y1]+prev_box[HEIGHT]-1))]
     new_target_box = [max(x1-1,0),max(y1-1,0),min(x2-1,img_width-1),min(y2-1,img_height-1)]
 
     # the images need to output
@@ -160,8 +145,3 @@ f = open("train.txt","w+")
 for item in train_list:
     f.write(item+'\n')
 f.close()
-
-
-
-
-

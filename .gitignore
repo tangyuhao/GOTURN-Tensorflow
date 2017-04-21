@@ -1,6 +1,7 @@
 .tags
 checkpoints/
-
+train_old/
+train.log
 train/
 2DMOT2015/
 MOT17Det/
@@ -8,3 +9,6 @@ __pycache__
 *.pyc
 .DS_Store
 train_summary/
+checkpoints_save/
+summary_save/
+train_old/
