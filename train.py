@@ -13,7 +13,7 @@ import pickle
 import caffenet
 
 
-NUM_EPOCHS = 100
+NUM_EPOCHS = 300
 BATCH_SIZE = 50
 WIDTH = 227
 HEIGHT = 227
@@ -61,7 +61,7 @@ def data_reader(input_queue):
 
 def next_batch(input_queue):
     min_queue_examples = 128
-    num_threads = 4
+    num_threads = 8
     [search_tensor, target_tensor, box_tensor] = data_reader(input_queue)
     [search_batch, target_batch, box_batch] = tf.train.shuffle_batch(
         [search_tensor, target_tensor, box_tensor],
@@ -75,7 +75,7 @@ def next_batch(input_queue):
 
 if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-        level=logging.DEBUG,filename="train.log")
+        level=logging.DEBUG,filename="newtrain.log")
 
     [train_target, train_search, train_box] = load_training_set("train_new.txt")
     target_tensors = tf.convert_to_tensor(train_target, dtype=tf.string)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     batch_queue = next_batch(input_queue)
     tracknet = caffenet.TRACKNET(BATCH_SIZE)
     tracknet.build()
-    train_step = tf.train.AdamOptimizer(1e-6,0.9).minimize(tracknet.loss_wdecay)
+    train_step = tf.train.AdamOptimizer(1e-5,0.9).minimize(tracknet.loss_wdecay)
 
     tf.summary.scalar('L1_loss', tracknet.loss)
     merged_summary = tf.summary.merge_all()
@@ -117,13 +117,13 @@ if __name__ == "__main__":
         saver = tf.train.Saver()
         saver.restore(sess, ckpt.model_checkpoint_path)
 
+    model_saver = tf.train.Saver(max_to_keep = 3)
     try:
         for i in range(start, int(len(train_box)/BATCH_SIZE*NUM_EPOCHS)):
             if i % int(len(train_box)/BATCH_SIZE) == 0:
-                logging.info("start epoch[%d]"%(int(i/len(train_box))))
+                logging.info("start epoch[%d]"%(int(i/len(train_box)*BATCH_SIZE)))
                 if i > start:
                     save_ckpt = "checkpoint.ckpt"
-                    model_saver = tf.train.Saver(max_to_keep = 3)
                     last_save_itr = i
                     model_saver.save(sess, "checkpoints/" + save_ckpt, global_step=i+1)
 
