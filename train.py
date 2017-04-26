@@ -13,7 +13,7 @@ import pickle
 import caffenet
 
 
-NUM_EPOCHS = 300
+NUM_EPOCHS = 500
 BATCH_SIZE = 50
 WIDTH = 227
 HEIGHT = 227
@@ -87,11 +87,11 @@ if __name__ == "__main__":
     tracknet.build()
 
     global_step = tf.Variable(0, trainable=False, name = "global_step")
-    starter_learning_rate = 0.001
-    learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
-                                           30000, 0.1, staircase=True, name = "learning_step")
+    #starter_learning_rate = 0.001
+    #learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
+    #                                       30000, 0.1, staircase=True, name = "learning_step")
 
-    train_step = tf.train.AdamOptimizer(learning_rate,0.9).minimize(\
+    train_step = tf.train.AdamOptimizer(0.001,0.9).minimize(\
                     tracknet.loss_wdecay, global_step=global_step)
 
 
