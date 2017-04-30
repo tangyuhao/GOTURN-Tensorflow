@@ -37,7 +37,7 @@ def load_training_set(train_file):
         train_target.append(line[0])
         train_search.append(line[1])
         # box = [x1,y1,x2,y2] (unit: percentage)
-        box = [100*float(line[2]), 100*float(line[3]), 100*float(line[4]), 100*float(line[5])]
+        box = [10*float(line[2]), 10*float(line[3]), 10*float(line[4]), 10*float(line[5])]
         train_box.append(box)
     ftrain.close()
     
@@ -125,6 +125,13 @@ if __name__ == "__main__":
         saver = tf.train.Saver([v for v in tf.global_variables() \
             if v.name != "global_step:0" and v.name != "learning_step:0"])
         saver.restore(sess, ckpt.model_checkpoint_path)
+    else:
+        f = open('pkl/right_order_goturn_weights.pkl', 'rb')
+        pretrained_weights = pickle.load(f,encoding='latin1')
+        f.close()
+        print("start loading pkl weights....")
+        tracknet.load_weight_from_dict(pretrained_weights, sess)
+        print("end loading....")
     assign_op = global_step.assign(start)
     sess.run(assign_op)
     model_saver = tf.train.Saver(max_to_keep = 3)
@@ -142,9 +149,9 @@ if __name__ == "__main__":
             cur_batch = sess.run(batch_queue)
 
             start_time = time.time()
-            sess.run([train_step],feed_dict={tracknet.image:cur_batch[0],
+            [_, loss] = sess.run([train_step, tracknet.loss],feed_dict={tracknet.image:cur_batch[0],
                     tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
-            logging.debug('Train: time elapsed: %.3fs.'%(time.time()-start_time))
+            logging.debug('Train: time elapsed: %.3fs, average_loss: %f'%(time.time()-start_time, loss/BATCH_SIZE))
 
             if i % 10 == 0 and i > start:
                 summary = sess.run(merged_summary, feed_dict={tracknet.image:cur_batch[0],
