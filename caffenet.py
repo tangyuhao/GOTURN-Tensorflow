@@ -19,28 +19,28 @@ class TRACKNET:
         self.target_pool1 = tf.nn.max_pool(self.target_conv1, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool1')
         # now 27 x 27 x 96
-        self.target_lrn1 = tf.nn.local_response_normalization(self.target_pool1, depth_radius = 2, alpha=0.0001,
+        self.target_lrn1 = tf.nn.local_response_normalization(self.target_pool1, depth_radius = 5, alpha=0.0001,
                                                     beta=0.75, name="target_lrn1")
         # now 27 x 27 x 96
 
-        self.target_conv2 = self._conv_relu_layer(bottom = self.target_lrn1,filter_size = [5, 5, 96, 256],
-                                                    strides = [1,1,1,1], pad = 2, bias_init = 1.0, name="target_conv_2")
+        self.target_conv2 = self._conv_relu_layer(bottom = self.target_lrn1,filter_size = [5, 5, 48, 256],
+                                                    strides = [1,1,1,1], pad = 2, bias_init = 1.0, group = 2, name="target_conv_2")
         # now 27 x 27 x 256
 
         self.target_pool2 = tf.nn.max_pool(self.target_conv2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool2')
         # now 13 x 13 x 256
-        self.target_lrn2 = tf.nn.local_response_normalization(self.target_pool2, depth_radius = 2, alpha=0.0001,
+        self.target_lrn2 = tf.nn.local_response_normalization(self.target_pool2, depth_radius = 5, alpha=0.0001,
                                                     beta=0.75, name="target_lrn2")
         # now 13 x 13 x 256
         self.target_conv3 = self._conv_relu_layer(bottom = self.target_lrn2,filter_size = [3, 3, 256, 384],
                                                     strides = [1,1,1,1], pad = 1, name="target_conv_3")
         # now 13 x 13 x 384
-        self.target_conv4 = self._conv_relu_layer(bottom = self.target_conv3,filter_size = [3, 3, 384, 384], bias_init = 1.0, 
-                                                    strides = [1,1,1,1], pad = 1, name="target_conv_4")
+        self.target_conv4 = self._conv_relu_layer(bottom = self.target_conv3,filter_size = [3, 3, 192, 384], bias_init = 1.0, 
+                                                    strides = [1,1,1,1], pad = 1, group = 2, name="target_conv_4")
         # now 13 x 13 x 384
-        self.target_conv5 = self._conv_relu_layer(bottom = self.target_conv4,filter_size = [3, 3, 384, 256], bias_init = 1.0, 
-                                                    strides = [1,1,1,1], pad = 1, name="target_conv_5")
+        self.target_conv5 = self._conv_relu_layer(bottom = self.target_conv4,filter_size = [3, 3, 192, 256], bias_init = 1.0, 
+                                                    strides = [1,1,1,1], pad = 1, group = 2, name="target_conv_5")
         # now 13 x 13 x 256
         self.target_pool5 = tf.nn.max_pool(self.target_conv5, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool5')
@@ -57,13 +57,13 @@ class TRACKNET:
                                                     padding='VALID', name='image_pool1')
 
         # now 27 x 27 x 96
-        self.image_lrn1 = tf.nn.local_response_normalization(self.image_pool1, depth_radius = 2, alpha=0.0001,
+        self.image_lrn1 = tf.nn.local_response_normalization(self.image_pool1, depth_radius = 5, alpha=0.0001,
                                                     beta=0.75, name="image_lrn1")
 
         # now 27 x 27 x 96
 
-        self.image_conv2 = self._conv_relu_layer(bottom = self.image_lrn1,filter_size = [5, 5, 96, 256],
-                                                    strides = [1,1,1,1], pad = 2, bias_init = 1.0, name="image_conv_2")
+        self.image_conv2 = self._conv_relu_layer(bottom = self.image_lrn1,filter_size = [5, 5, 48, 256],
+                                                    strides = [1,1,1,1], pad = 2, bias_init = 1.0, group = 2, name="image_conv_2")
 
         # now 27 x 27 x 256
 
@@ -71,7 +71,7 @@ class TRACKNET:
                                                     padding='VALID', name='image_pool2')
 
         # now 13 x 13 x 256
-        self.image_lrn2 = tf.nn.local_response_normalization(self.image_pool2, depth_radius = 2, alpha=0.0001,
+        self.image_lrn2 = tf.nn.local_response_normalization(self.image_pool2, depth_radius = 5, alpha=0.0001,
                                                     beta=0.75, name="image_lrn2")
 
         # now 13 x 13 x 256
@@ -79,12 +79,12 @@ class TRACKNET:
                                                     strides = [1,1,1,1], pad = 1, name="image_conv_3")
 
         # now 13 x 13 x 384
-        self.image_conv4 = self._conv_relu_layer(bottom = self.image_conv3,filter_size = [3, 3, 384, 384], 
-                                                    strides = [1,1,1,1], pad = 1, name="image_conv_4")
+        self.image_conv4 = self._conv_relu_layer(bottom = self.image_conv3,filter_size = [3, 3, 192, 384], 
+                                                    strides = [1,1,1,1], pad = 1, group = 2, name="image_conv_4")
 
         # now 13 x 13 x 384
-        self.image_conv5 = self._conv_relu_layer(bottom = self.image_conv4,filter_size = [3, 3, 384, 256], bias_init = 1.0, 
-                                                    strides = [1,1,1,1], pad = 1, name="image_conv_5")
+        self.image_conv5 = self._conv_relu_layer(bottom = self.image_conv4,filter_size = [3, 3, 192, 256], bias_init = 1.0, 
+                                                    strides = [1,1,1,1], pad = 1, group = 2, name="image_conv_5")
 
         # now 13 x 13 x 256
         self.image_pool5 = tf.nn.max_pool(self.image_conv5, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
@@ -112,9 +112,7 @@ class TRACKNET:
         if (self.train):
             self.fc3 = tf.nn.dropout(self.fc3, 0.5)
 
-        self.fc4 = self._fc_relu_layers(self.fc3, dim = 4, name = "fc3")
-        if (self.train):
-            self.fc4 = tf.nn.dropout(self.fc4, 0.5)
+        self.fc4 = self._fc_layers(self.fc3, dim = 4, name = "fc4")
 
         self.print_shapes()
         self.loss = self._loss_layer(self.fc4, self.bbox ,name = "loss")
@@ -127,17 +125,28 @@ class TRACKNET:
         loss = tf.reduce_sum(diff_flat, name = name)
         return loss
 
-    def _conv_relu_layer(self,bottom,filter_size, strides, pad = 0,bias_init = 0.0, name = None):
+    def _conv_relu_layer(self,bottom,filter_size, strides, pad = 0,bias_init = 0.0, group = 1, name = None):
         with tf.name_scope(name) as scope:
+
             if (pad > 0):
                 paddings = [[0,0],[pad,pad],[pad,pad],[0,0]]
                 bottom = tf.pad(bottom, paddings, "CONSTANT")
             kernel = tf.Variable(tf.truncated_normal(filter_size, dtype=tf.float32,
                                                      stddev=1e-2), name='weights')
-            conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
             biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float32), name='biases')
-            out = tf.nn.bias_add(conv, biases)
             self.parameters[name] = [kernel, biases]
+            if (group == 1):
+                conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
+                out = tf.nn.bias_add(conv, biases)
+            elif (group == 2):
+                kernel1, kernel2 = tf.split(kernel, num_or_size_splits=group, axis=3)
+                bottom1, bottom2 = tf.split(bottom, num_or_size_splits=group, axis=3)
+                conv1 = tf.nn.conv2d(bottom1, kernel1, strides, padding='VALID')
+                conv2 = tf.nn.conv2d(bottom2, kernel2, strides, padding='VALID')
+                conv = tf.concat([conv1, conv2], axis=3)
+                out = tf.nn.bias_add(conv, biases)
+            else:
+                raise TypeError("number of groups not supported")
 
             if not tf.get_variable_scope().reuse:
                 weight_decay = tf.multiply(tf.nn.l2_loss(kernel), self.wd,
@@ -219,6 +228,46 @@ class TRACKNET:
         print("%s:"%(self.fc2),self.fc2.get_shape().as_list())
         print("%s:"%(self.fc3),self.fc3.get_shape().as_list())
         print("%s:"%(self.fc4),self.fc4.get_shape().as_list())
+        print("kernel_sizes:")
+        for key in self.parameters:
+            print("%s:"%(key),self.parameters[key][0].get_shape().as_list())
+
+    def load_weight_from_dict(self,weights_dict,sess):
+        # for convolutional layers
+        sess.run(self.parameters['target_conv_1'][0].assign(weights_dict['conv1']['weights']))
+        sess.run(self.parameters['target_conv_2'][0].assign(weights_dict['conv2']['weights']))
+        sess.run(self.parameters['target_conv_3'][0].assign(weights_dict['conv3']['weights']))
+        sess.run(self.parameters['target_conv_4'][0].assign(weights_dict['conv4']['weights']))
+        sess.run(self.parameters['target_conv_5'][0].assign(weights_dict['conv5']['weights']))
+        sess.run(self.parameters['image_conv_1'][0].assign(weights_dict['conv1_p']['weights']))
+        sess.run(self.parameters['image_conv_2'][0].assign(weights_dict['conv2_p']['weights']))
+        sess.run(self.parameters['image_conv_3'][0].assign(weights_dict['conv3_p']['weights']))
+        sess.run(self.parameters['image_conv_4'][0].assign(weights_dict['conv4_p']['weights']))
+        sess.run(self.parameters['image_conv_5'][0].assign(weights_dict['conv5_p']['weights']))
+
+        sess.run(self.parameters['target_conv_1'][1].assign(weights_dict['conv1']['bias']))
+        sess.run(self.parameters['target_conv_2'][1].assign(weights_dict['conv2']['bias']))
+        sess.run(self.parameters['target_conv_3'][1].assign(weights_dict['conv3']['bias']))
+        sess.run(self.parameters['target_conv_4'][1].assign(weights_dict['conv4']['bias']))
+        sess.run(self.parameters['target_conv_5'][1].assign(weights_dict['conv5']['bias']))
+        sess.run(self.parameters['image_conv_1'][1].assign(weights_dict['conv1_p']['bias']))
+        sess.run(self.parameters['image_conv_2'][1].assign(weights_dict['conv2_p']['bias']))
+        sess.run(self.parameters['image_conv_3'][1].assign(weights_dict['conv3_p']['bias']))
+        sess.run(self.parameters['image_conv_4'][1].assign(weights_dict['conv4_p']['bias']))
+        sess.run(self.parameters['image_conv_5'][1].assign(weights_dict['conv5_p']['bias']))
+
+        # for fully connected layers
+        sess.run(self.parameters['fc1'][0].assign(weights_dict['fc6-new']['weights']))
+        sess.run(self.parameters['fc2'][0].assign(weights_dict['fc7-new']['weights']))
+        sess.run(self.parameters['fc3'][0].assign(weights_dict['fc7-newb']['weights']))
+        sess.run(self.parameters['fc4'][0].assign(weights_dict['fc8-shapes']['weights']))
+
+        sess.run(self.parameters['fc1'][1].assign(weights_dict['fc6-new']['bias']))
+        sess.run(self.parameters['fc2'][1].assign(weights_dict['fc7-new']['bias']))
+        sess.run(self.parameters['fc3'][1].assign(weights_dict['fc7-newb']['bias']))
+        sess.run(self.parameters['fc4'][1].assign(weights_dict['fc8-shapes']['bias']))
+
+
     
     def test(self):
         sess = tf.Session()
