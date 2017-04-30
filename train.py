@@ -74,6 +74,8 @@ def next_batch(input_queue):
 
 
 if __name__ == "__main__":
+    if (os.path.isfile("newtrain.log")):
+        os.remove("newtrain.log")
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
         level=logging.DEBUG,filename="newtrain.log")
 
