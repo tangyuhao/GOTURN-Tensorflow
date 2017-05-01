@@ -125,15 +125,15 @@ class TRACKNET:
         loss = tf.reduce_sum(diff_flat, name = name)
         return loss
 
-    def _conv_relu_layer(self,bottom,filter_size, strides, pad = 0,bias_init = 0.0, group = 1, name = None):
+    def _conv_relu_layer(self,bottom,filter_size, strides, pad = 0,bias_init = 0.0, group = 1, trainable = False, name = None):
         with tf.name_scope(name) as scope:
 
             if (pad > 0):
                 paddings = [[0,0],[pad,pad],[pad,pad],[0,0]]
                 bottom = tf.pad(bottom, paddings, "CONSTANT")
             kernel = tf.Variable(tf.truncated_normal(filter_size, dtype=tf.float32,
-                                                     stddev=1e-2), name='weights')
-            biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float32), name='biases')
+                                                     stddev=1e-2), trainable=trainable, name='weights')
+            biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float32), trainable=trainable, name='biases')
             self.parameters[name] = [kernel, biases]
             if (group == 1):
                 conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
@@ -148,11 +148,11 @@ class TRACKNET:
             else:
                 raise TypeError("number of groups not supported")
 
-            if not tf.get_variable_scope().reuse:
-                weight_decay = tf.multiply(tf.nn.l2_loss(kernel), self.wd,
-                                       name='kernel_loss')
-                tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
-                                 weight_decay)
+            # if not tf.get_variable_scope().reuse:
+            #     weight_decay = tf.multiply(tf.nn.l2_loss(kernel), self.wd,
+            #                            name='kernel_loss')
+            #     tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
+            #                      weight_decay)
 
 
             out2 = tf.nn.relu(out, name=scope)

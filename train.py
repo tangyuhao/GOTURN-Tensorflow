@@ -94,7 +94,7 @@ if __name__ == "__main__":
     #learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
     #                                       30000, 0.1, staircase=True, name = "learning_step")
 
-    train_step = tf.train.AdamOptimizer(0.001,0.9).minimize(\
+    train_step = tf.train.AdamOptimizer(0.00001,0.9).minimize(\
                     tracknet.loss_wdecay, global_step=global_step)
 
 
