@@ -13,6 +13,7 @@ import pickle
 import caffenet
 
 
+
 NUM_EPOCHS = 500
 BATCH_SIZE = 50
 WIDTH = 227

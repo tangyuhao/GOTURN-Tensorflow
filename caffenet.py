@@ -93,12 +93,12 @@ class TRACKNET:
         # now 6 x 6 x 256
 
         ########### Concatnate two layers ###########
-        self.concat = tf.concat([self.target_pool5, self.image_pool5], axis = 1)
+        self.concat = tf.concat([self.target_pool5, self.image_pool5], axis = 3)
 
 
         ########### fully connencted layers ###########
         # 6 * 6 * 256 * 2 == 18432
-        # assert self.fc1.get_shape().as_list()[1:] == [12, 6, 256]
+        # assert self.fc1.get_shape().as_list()[1:] == [6, 6, 512]
         self.fc1 = self._fc_relu_layers(self.concat, dim = 4096, name = "fc1")
         if (self.train):
             self.fc1 = tf.nn.dropout(self.fc1, 0.5)

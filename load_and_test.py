@@ -11,6 +11,7 @@ import pdb
 import os, glob
 import pickle
 import caffenet
+from PIL import Image
 
 NUM_EPOCHS = 500
 BATCH_SIZE = 50
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     box_tensors = tf.convert_to_tensor(train_box, dtype=tf.float64)
     input_queue = tf.train.slice_input_producer([search_tensors, target_tensors, box_tensors],shuffle=True)
     batch_queue = next_batch(input_queue)
-    tracknet = caffenet.TRACKNET(BATCH_SIZE, train = False)
+    tracknet = caffenet.TRACKNET(BATCH_SIZE, train = True)
     tracknet.build()
 
     global_step = tf.Variable(0, trainable=False, name = "global_step")
@@ -147,6 +148,8 @@ if __name__ == "__main__":
 
 
             cur_batch = sess.run(batch_queue)
+
+            #print("len of batch",len(cur_batch))
 
             start_time = time.time()
             [batch_loss, fc4] = sess.run([tracknet.loss, tracknet.fc4],feed_dict={tracknet.image:cur_batch[0],
