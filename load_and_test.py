@@ -34,12 +34,17 @@ def load_training_set(train_file):
     for line in trainlines:
         #print(line)
         line = line.split(",")
+        # remove too extreme cases
+        if (float(line[2]) < 0 or float(line[3]) < 0 or float(line[4]) > 1 or float(line[5]) > 1):
+            print("hahah")
+            continue
         train_target.append(line[0])
         train_search.append(line[1])
         # box = [x1,y1,x2,y2] (unit: percentage)
         box = [10*float(line[2]), 10*float(line[3]), 10*float(line[4]), 10*float(line[5])]
         train_box.append(box)
     ftrain.close()
+    print("len:%d"%(len(train_target)))
     
     return [train_target, train_search, train_box]
 
@@ -49,6 +54,7 @@ def data_reader(input_queue):
     '''
     search_img = tf.read_file(input_queue[0])
     target_img = tf.read_file(input_queue[1])
+
     search_tensor = tf.to_float(tf.image.decode_jpeg(search_img, channels = 3))
     search_tensor = tf.image.resize_images(search_tensor,[HEIGHT,WIDTH],
                             method=tf.image.ResizeMethod.BILINEAR)
@@ -63,13 +69,11 @@ def next_batch(input_queue):
     min_queue_examples = 128
     num_threads = 8
     [search_tensor, target_tensor, box_tensor] = data_reader(input_queue)
-    [search_batch, target_batch, box_batch] = tf.train.shuffle_batch(
+    [search_batch, target_batch, box_batch] = tf.train.batch(
         [search_tensor, target_tensor, box_tensor],
         batch_size=BATCH_SIZE,
         num_threads=num_threads,
-        capacity=min_queue_examples + (num_threads+2)*BATCH_SIZE,
-        seed=88,
-        min_after_dequeue=min_queue_examples)
+        capacity=min_queue_examples + (num_threads+2)*BATCH_SIZE)
     return [search_batch, target_batch, box_batch]
 
 
@@ -87,9 +91,9 @@ if __name__ == "__main__":
     target_tensors = tf.convert_to_tensor(train_target, dtype=tf.string)
     search_tensors = tf.convert_to_tensor(train_search, dtype=tf.string)
     box_tensors = tf.convert_to_tensor(train_box, dtype=tf.float64)
-    input_queue = tf.train.slice_input_producer([search_tensors, target_tensors, box_tensors],shuffle=True)
+    input_queue = tf.train.slice_input_producer([search_tensors, target_tensors, box_tensors],shuffle=False)
     batch_queue = next_batch(input_queue)
-    tracknet = caffenet.TRACKNET(BATCH_SIZE, train = True)
+    tracknet = caffenet.TRACKNET(BATCH_SIZE, train = False)
     tracknet.build()
 
     global_step = tf.Variable(0, trainable=False, name = "global_step")
@@ -120,33 +124,29 @@ if __name__ == "__main__":
     tf.train.start_queue_runners(sess=sess, coord=coord)
 
 
-    # ckpt_dir = "./checkpoints"
-    # if not os.path.exists(ckpt_dir):
-    #     os.makedirs(ckpt_dir)
-    # ckpt = tf.train.get_checkpoint_state(ckpt_dir)
+    ckpt_dir = "./checkpoints"
+    if not os.path.exists(ckpt_dir):
+        os.makedirs(ckpt_dir)
+    ckpt = tf.train.get_checkpoint_state(ckpt_dir)
     start = 0
-    # if ckpt and ckpt.model_checkpoint_path:
-    #     start = int(ckpt.model_checkpoint_path.split("-")[1])
-    #     logging.info("start by iteration: %d"%(start))
-    #     saver = tf.train.Saver([v for v in tf.global_variables() \
-    #         if v.name != "global_step:0" and v.name != "learning_step:0"])
-    #     saver.restore(sess, ckpt.model_checkpoint_path)
-    print("start loading pkl weights")
-    tracknet.load_weight_from_dict(pretrained_weights, sess)
+    if ckpt and ckpt.model_checkpoint_path:
+        start = int(ckpt.model_checkpoint_path.split("-")[1])
+        logging.info("start by iteration: %d"%(start))
+        saver = tf.train.Saver([v for v in tf.global_variables() \
+            if v.name != "global_step:0" and v.name != "learning_step:0"])
+        saver.restore(sess, ckpt.model_checkpoint_path)
+    else:
+        f = open('pkl/right_order_goturn_weights.pkl', 'rb')
+        pretrained_weights = pickle.load(f,encoding='latin1')
+        f.close()
+        print("start loading pkl weights....")
+        tracknet.load_weight_from_dict(pretrained_weights, sess)
+        print("end loading....")
     assign_op = global_step.assign(start)
     sess.run(assign_op)
     model_saver = tf.train.Saver(max_to_keep = 3)
     try:
-        for i in range(start, int(len(train_box)/BATCH_SIZE*NUM_EPOCHS)):
-            if i % int(len(train_box)/BATCH_SIZE) == 0:
-                logging.info("start epoch[%d]"%(int(i/len(train_box)*BATCH_SIZE)))
-                if i > start:
-                    save_ckpt = "checkpoint.ckpt"
-                    last_save_itr = i
-                    model_saver.save(sess, "checkpoints/" + save_ckpt, global_step=i+1)
-            print(global_step.eval(session=sess))        
-
-
+        for i in range(0, int(len(train_box)/BATCH_SIZE)):
             cur_batch = sess.run(batch_queue)
 
             #print("len of batch",len(cur_batch))

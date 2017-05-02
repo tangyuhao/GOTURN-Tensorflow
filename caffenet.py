@@ -19,7 +19,7 @@ class TRACKNET:
         self.target_pool1 = tf.nn.max_pool(self.target_conv1, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool1')
         # now 27 x 27 x 96
-        self.target_lrn1 = tf.nn.local_response_normalization(self.target_pool1, depth_radius = 5, alpha=0.0001,
+        self.target_lrn1 = tf.nn.local_response_normalization(self.target_pool1, depth_radius = 2, alpha=0.0001,
                                                     beta=0.75, name="target_lrn1")
         # now 27 x 27 x 96
 
@@ -30,7 +30,7 @@ class TRACKNET:
         self.target_pool2 = tf.nn.max_pool(self.target_conv2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool2')
         # now 13 x 13 x 256
-        self.target_lrn2 = tf.nn.local_response_normalization(self.target_pool2, depth_radius = 5, alpha=0.0001,
+        self.target_lrn2 = tf.nn.local_response_normalization(self.target_pool2, depth_radius = 2, alpha=0.0001,
                                                     beta=0.75, name="target_lrn2")
         # now 13 x 13 x 256
         self.target_conv3 = self._conv_relu_layer(bottom = self.target_lrn2,filter_size = [3, 3, 256, 384],
@@ -57,7 +57,7 @@ class TRACKNET:
                                                     padding='VALID', name='image_pool1')
 
         # now 27 x 27 x 96
-        self.image_lrn1 = tf.nn.local_response_normalization(self.image_pool1, depth_radius = 5, alpha=0.0001,
+        self.image_lrn1 = tf.nn.local_response_normalization(self.image_pool1, depth_radius = 2, alpha=0.0001,
                                                     beta=0.75, name="image_lrn1")
 
         # now 27 x 27 x 96
@@ -71,7 +71,7 @@ class TRACKNET:
                                                     padding='VALID', name='image_pool2')
 
         # now 13 x 13 x 256
-        self.image_lrn2 = tf.nn.local_response_normalization(self.image_pool2, depth_radius = 5, alpha=0.0001,
+        self.image_lrn2 = tf.nn.local_response_normalization(self.image_pool2, depth_radius = 2, alpha=0.0001,
                                                     beta=0.75, name="image_lrn2")
 
         # now 13 x 13 x 256
@@ -91,10 +91,17 @@ class TRACKNET:
                                                     padding='VALID', name='image_pool5')
 
         # now 6 x 6 x 256
+        # tensorflow layer: n * w * h * c
+        # but caffe layer is: n * c * h * w
+
+        # tensorflow kernel: h * w * in_c * out_c
+        # caffe kernel: out_c * in_c * h * w
 
         ########### Concatnate two layers ###########
-        self.concat = tf.concat([self.target_pool5, self.image_pool5], axis = 3)
+        self.concat = tf.concat([self.target_pool5, self.image_pool5], axis = 3) # 0, 1, 2, 3 - > 2, 3, 1, 0
 
+        # important, since caffe has different layer dimension order
+        self.concat = tf.transpose(self.concat, perm=[0,3,1,2]) 
 
         ########### fully connencted layers ###########
         # 6 * 6 * 256 * 2 == 18432
