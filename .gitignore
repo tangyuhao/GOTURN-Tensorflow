@@ -1,11 +1,12 @@
 __MACOSX
-newtrain.log
+*.log
+*.pdf
+test/
 pkl/
 train.zip
 .tags
 checkpoints/
 train_old/
-train.log
 train/
 2DMOT2015/
 MOT17Det/

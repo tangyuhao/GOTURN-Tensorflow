@@ -10,24 +10,23 @@ import numpy as np
 import pdb
 import os, glob
 import pickle
-import caffenet
-from PIL import Image
+import goturn_net
 
 NUM_EPOCHS = 500
 BATCH_SIZE = 50
 WIDTH = 227
 HEIGHT = 227
-# logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-#                     level=logging.INFO,
-#                     filename="train.log")
 
-def load_training_set(train_file):
+
+def load_train_test_set(train_file):
     '''
-    return train_set and val_set
+    return train_set or test_set
+    example line in the file:
+    <target_image_path>,<search_image_path>,<x1>,<y1>,<x2>,<y2>
+    (<x1>,<y1>,<x2>,<y2> all relative to search image)
     '''
     ftrain = open(train_file, "r")
     trainlines = ftrain.read().splitlines()
-    #random.shuffle(trainlines)
     train_target = []
     train_search = []
     train_box = []
@@ -35,12 +34,10 @@ def load_training_set(train_file):
         #print(line)
         line = line.split(",")
         # remove too extreme cases
-        if (float(line[2]) < 0 or float(line[3]) < 0 or float(line[4]) > 1 or float(line[5]) > 1):
-            print("hahah")
+        if (float(line[2]) < -0.3 or float(line[3]) < -0.3 or float(line[4]) > 1.2 or float(line[5]) > 1.2):
             continue
         train_target.append(line[0])
         train_search.append(line[1])
-        # box = [x1,y1,x2,y2] (unit: percentage)
         box = [10*float(line[2]), 10*float(line[3]), 10*float(line[4]), 10*float(line[5])]
         train_box.append(box)
     ftrain.close()
@@ -82,38 +79,22 @@ if __name__ == "__main__":
     f = open('pkl/right_order_goturn_weights.pkl', 'rb')
     pretrained_weights = pickle.load(f,encoding='latin1')
     f.close()
-    if (os.path.isfile("newtrain.log")):
-        os.remove("newtrain.log")
+    if (os.path.isfile("test.log")):
+        os.remove("test.log")
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-        level=logging.DEBUG,filename="newtrain.log")
+        level=logging.DEBUG,filename="test.log")
 
-    [train_target, train_search, train_box] = load_training_set("train_new.txt")
+    [train_target, train_search, train_box] = load_train_test_set("train_new.txt")
     target_tensors = tf.convert_to_tensor(train_target, dtype=tf.string)
     search_tensors = tf.convert_to_tensor(train_search, dtype=tf.string)
     box_tensors = tf.convert_to_tensor(train_box, dtype=tf.float64)
     input_queue = tf.train.slice_input_producer([search_tensors, target_tensors, box_tensors],shuffle=False)
     batch_queue = next_batch(input_queue)
-    tracknet = caffenet.TRACKNET(BATCH_SIZE, train = False)
+    tracknet = goturn_net.TRACKNET(BATCH_SIZE, train = False)
     tracknet.build()
 
-    global_step = tf.Variable(0, trainable=False, name = "global_step")
-    #starter_learning_rate = 0.001
-    #learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
-    #                                       30000, 0.1, staircase=True, name = "learning_step")
 
-    train_step = tf.train.AdamOptimizer(0.001,0.9).minimize(\
-                    tracknet.loss_wdecay, global_step=global_step)
-
-
-    tf.summary.scalar('L1_loss', tracknet.loss)
-    merged_summary = tf.summary.merge_all()
-
-
-    # with tf.session() as sess:
     sess = tf.Session()
-
-    train_writer = tf.summary.FileWriter('./train_summary', sess.graph)
-
     init = tf.global_variables_initializer()
     init_local = tf.local_variables_initializer()
     sess.run(init)
@@ -123,34 +104,16 @@ if __name__ == "__main__":
     # start the threads
     tf.train.start_queue_runners(sess=sess, coord=coord)
 
-
     ckpt_dir = "./checkpoints"
     if not os.path.exists(ckpt_dir):
         os.makedirs(ckpt_dir)
     ckpt = tf.train.get_checkpoint_state(ckpt_dir)
-    start = 0
     if ckpt and ckpt.model_checkpoint_path:
-        start = int(ckpt.model_checkpoint_path.split("-")[1])
-        logging.info("start by iteration: %d"%(start))
-        saver = tf.train.Saver([v for v in tf.global_variables() \
-            if v.name != "global_step:0" and v.name != "learning_step:0"])
+        saver = tf.train.Saver()
         saver.restore(sess, ckpt.model_checkpoint_path)
-    else:
-        f = open('pkl/right_order_goturn_weights.pkl', 'rb')
-        pretrained_weights = pickle.load(f,encoding='latin1')
-        f.close()
-        print("start loading pkl weights....")
-        tracknet.load_weight_from_dict(pretrained_weights, sess)
-        print("end loading....")
-    assign_op = global_step.assign(start)
-    sess.run(assign_op)
-    model_saver = tf.train.Saver(max_to_keep = 3)
     try:
         for i in range(0, int(len(train_box)/BATCH_SIZE)):
             cur_batch = sess.run(batch_queue)
-
-            #print("len of batch",len(cur_batch))
-
             start_time = time.time()
             [batch_loss, fc4] = sess.run([tracknet.loss, tracknet.fc4],feed_dict={tracknet.image:cur_batch[0],
                     tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
@@ -158,16 +121,7 @@ if __name__ == "__main__":
             logging.info('gt batch box: %s' %(cur_batch[2]))
             logging.info('batch loss = %f'%(batch_loss))
             logging.debug('test: time elapsed: %.3fs.'%(time.time()-start_time))
-
-            if i % 10 == 0 and i > start:
-                summary = sess.run(merged_summary, feed_dict={tracknet.image:cur_batch[0],
-                    tracknet.target:cur_batch[1], tracknet.bbox:cur_batch[2]})
-                train_writer.add_summary(summary, i)
     except KeyboardInterrupt:
         print("get keyboard interrupt")
-        if (i - start > 1000):
-            model_saver = tf.train.Saver()
-            save_ckpt = "checkpoint.ckpt"
-            model_saver.save(sess, "checkpoints/" + save_ckpt, global_step=i+1)
 
 
