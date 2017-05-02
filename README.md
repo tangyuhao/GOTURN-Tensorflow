@@ -1,7 +1,9 @@
 # GOTURN-Tensorflow
 
 This is an tensorflow implementation of GOTURN.
-Thanks to author **David Held** for his help for this implementation.
+
+Thanks to author **David Held** for his help of this implementation.
+
 The original paper is: 
 
 **[Learning to Track at 100 FPS with Deep Regression Networks](http://davheld.github.io/GOTURN/GOTURN.html)**,
@@ -25,7 +27,7 @@ You can refer to the paper or github repo above for more details.
 - tensorflow 1.0+, both cpu and gpu work fine
 
 ## How to use it
-### finetune for your own dataset
+### Finetune for your own dataset
 1. Create a folder, fill in all training images
 2. Create a <train_txt_file>.txt file
     - It should contains target image, searching image and ground-truth bounding box
@@ -39,7 +41,7 @@ python train.py
 ```
 5. The log file is `train.log` by default
 
-### test 
+### Test 
 1. Download pretrained model from: [GOTURN_MODEL](https://drive.google.com/open?id=0BwToyaMzz69QZ3Zlc0h4NzhBNDg)
 2. Uncompress the `checkpoints` folder, and put it in the root directory of this repo 
 3. Test on examples just by running `load_and_test.py` 

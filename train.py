@@ -18,7 +18,7 @@ NUM_EPOCHS = 500
 BATCH_SIZE = 50
 WIDTH = 227
 HEIGHT = 227
-train_txt = "train_new.txt"
+train_txt = "train_set.txt"
 logfile = "train.log"
 def load_training_set(train_file):
     '''

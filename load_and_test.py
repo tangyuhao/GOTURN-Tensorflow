@@ -17,7 +17,8 @@ BATCH_SIZE = 50
 WIDTH = 227
 HEIGHT = 227
 
-
+logfile = "test.log"
+test_txt = "test_set.txt"
 def load_train_test_set(train_file):
     '''
     return train_set or test_set
@@ -79,12 +80,12 @@ if __name__ == "__main__":
     f = open('pkl/right_order_goturn_weights.pkl', 'rb')
     pretrained_weights = pickle.load(f,encoding='latin1')
     f.close()
-    if (os.path.isfile("test.log")):
-        os.remove("test.log")
+    if (os.path.isfile(logfile)):
+        os.remove(logfile)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-        level=logging.DEBUG,filename="test.log")
+        level=logging.DEBUG,filename=logfile)
 
-    [train_target, train_search, train_box] = load_train_test_set("train_new.txt")
+    [train_target, train_search, train_box] = load_train_test_set(test_txt)
     target_tensors = tf.convert_to_tensor(train_target, dtype=tf.string)
     search_tensors = tf.convert_to_tensor(train_search, dtype=tf.string)
     box_tensors = tf.convert_to_tensor(train_box, dtype=tf.float64)
