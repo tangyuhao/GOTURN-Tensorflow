@@ -1,6 +1,7 @@
-# goturn
+# GOTURN-Tensorflow
 
 This is an tensorflow implementation of GOTURN.
+Thanks to author **David Held** for his help for this implementation.
 The original paper is: 
 
 **[Learning to Track at 100 FPS with Deep Regression Networks](http://davheld.github.io/GOTURN/GOTURN.html)**,
@@ -11,7 +12,7 @@ The original paper is:
 <br>
 
 The github repo for caffe implementation is given by the authors of this paper:
-**[davheld/GOTURN](https://github.com/davheld/GOTURN))**
+**[davheld/GOTURN](https://github.com/davheld/GOTURN)**
 
 breif illustration of how this network works:
 
