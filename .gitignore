@@ -1,3 +1,5 @@
+get_train_set*
+ignore_files
 __MACOSX
 *.log
 *.pdf

@@ -13,10 +13,10 @@ The original paper is:
 [Silvio Savarese](http://cvgl.stanford.edu/silvio/),
 <br>
 
-The github repo for caffe implementation is given by the authors of this paper:
+The github repo for caffe implementation is given by the authors:
 **[davheld/GOTURN](https://github.com/davheld/GOTURN)**
 
-breif illustration of how this network works:
+Brief illustration of how this network works:
 
 <img src="imgs/pull7f-web_e2.png" width=85%>
 
