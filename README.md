@@ -1,6 +1,6 @@
 # GOTURN-Tensorflow
 
-This is an tensorflow implementation of GOTURN.
+This is a tensorflow implementation of GOTURN.
 
 Thanks to author **David Held** for his help of this implementation.
 
