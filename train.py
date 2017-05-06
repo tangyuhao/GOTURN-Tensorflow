@@ -1,15 +1,9 @@
 # train file
 
-from datetime import datetime
 import logging
-import sys
 import time
-import random
 import tensorflow as tf
-import numpy as np
-import pdb
-import os, glob
-import pickle
+import os
 import goturn_net
 
 

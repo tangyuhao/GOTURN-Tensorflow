@@ -1,19 +1,13 @@
 # train file
 
-from datetime import datetime
 import logging
-import sys
 import time
-import random
 import tensorflow as tf
-import numpy as np
-import pdb
-import os, glob
-import pickle
+import os
 import goturn_net
 
 NUM_EPOCHS = 500
-BATCH_SIZE = 50
+BATCH_SIZE = 10
 WIDTH = 227
 HEIGHT = 227
 
@@ -35,8 +29,8 @@ def load_train_test_set(train_file):
         #print(line)
         line = line.split(",")
         # remove too extreme cases
-        if (float(line[2]) < -0.3 or float(line[3]) < -0.3 or float(line[4]) > 1.2 or float(line[5]) > 1.2):
-            continue
+        # if (float(line[2]) < -0.3 or float(line[3]) < -0.3 or float(line[4]) > 1.2 or float(line[5]) > 1.2):
+        #     continue
         train_target.append(line[0])
         train_search.append(line[1])
         box = [10*float(line[2]), 10*float(line[3]), 10*float(line[4]), 10*float(line[5])]
@@ -76,10 +70,6 @@ def next_batch(input_queue):
 
 
 if __name__ == "__main__":
-    # load "pkl/right_order_goturn_weights.pkl"
-    f = open('pkl/right_order_goturn_weights.pkl', 'rb')
-    pretrained_weights = pickle.load(f,encoding='latin1')
-    f.close()
     if (os.path.isfile(logfile)):
         os.remove(logfile)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
