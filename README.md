@@ -50,4 +50,6 @@ python load_and_test.py
 ```
 4. The log file is `test.log` by default
 
+### TIPS
+Be careful, the output of this network actually always from 0 to 10 thus I multiplied the ground-truth bounding boxes( always ranging from 0 to 1) by 10.
 
