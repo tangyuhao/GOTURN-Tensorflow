@@ -82,9 +82,9 @@ if __name__ == "__main__":
 
     train_step = tf.train.AdamOptimizer(0.00001,0.9).minimize(\
                     tracknet.loss_wdecay, global_step=global_step)
-
+    merged_summary = tf.summary.merge_all()
     sess = tf.Session()
-
+    train_writer = tf.summary.FileWriter('./train_summary', sess.graph)
     init = tf.global_variables_initializer()
     init_local = tf.local_variables_initializer()
     sess.run(init)
